@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About | Loan Approval Prediction System</title>
+  <meta name="description" content="Technical documentation, empirical performance benchmarks, confusion matrix, and feature importances.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Fallback external stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3.0">
+  <link rel="stylesheet" href="../static/css/style.css">
+
+  <!-- Embedded CSS to guarantee styles are 100% applied under all circumstances -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --bg-page: #fbfbf9;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafc;
+      --border-light: #e5e7eb;
+      --border-medium: #cbd5e1;
+      --border-focus: #2563eb;
+      --text-main: #0f172a;
+      --text-body: #334155;
+      --text-muted: #64748b;
+      --primary: #1d4ed8;
+      --primary-hover: #1e40af;
+      --primary-light: #eff6ff;
+      --success: #059669;
+      --danger: #dc2626;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --shadow-card: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-body);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      width: 100%;
+    }
+
+    /* Navigation */
+    .site-nav {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-light);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 4.5rem;
+    }
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+    .brand-badge {
+      width: 2.6rem;
+      height: 2.6rem;
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
+    }
+    .brand-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: block;
+      line-height: 1.15;
+    }
+    .brand-tag {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      list-style: none;
+    }
+    .nav-item-link {
+      text-decoration: none;
+      font-size: 0.925rem;
+      font-weight: 600;
+      color: var(--text-body);
+      padding: 0.5rem 1.15rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+    }
+    .nav-item-link:hover, .nav-item-link.active {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .nav-item-link.active {
+      font-weight: 700;
+    }
+
+    .page-intro {
+      padding: 2.75rem 0 2rem;
+      text-align: center;
+    }
+    .page-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.025em;
+      margin-bottom: 0.6rem;
+    }
+    .page-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* About Sections */
+    .about-section {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem;
+      margin-bottom: 1.75rem;
+      box-shadow: var(--shadow-card);
+    }
+    .about-section h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.85rem;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 0.6rem;
+    }
+    .about-section p {
+      color: var(--text-body);
+      line-height: 1.75;
+      margin-bottom: 1rem;
+    }
+    .about-section p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Benchmark Table */
+    .benchmark-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.25rem 0;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--border-light);
+      text-align: center;
+    }
+    .benchmark-table th {
+      background: #f8fafc;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .benchmark-table td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .benchmark-table tr.highlight-row {
+      background: #f0fdf4;
+    }
+    .benchmark-table tr.highlight-row td:first-child {
+      color: var(--success);
+    }
+
+    /* Confusion Matrix Cards */
+    .cm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+    .cm-box {
+      background: #f8fafc;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .cm-box.tn { border-top: 4px solid var(--success); }
+    .cm-box.tp { border-top: 4px solid var(--primary); }
+    .cm-box.fp { border-top: 4px solid var(--danger); }
+    .cm-box.fn { border-top: 4px solid #f59e0b; }
+    .cm-number {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+    .cm-tag {
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    /* Feature Importance */
+    .fi-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 60px;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+    }
+    @media (max-width: 600px) {
+      .fi-row { grid-template-columns: 140px 1fr 50px; font-size: 0.8rem; }
+    }
+    .fi-label {
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .fi-track {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .fi-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: var(--radius-full);
+    }
+    .fi-val {
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    .tech-tag {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 0.825rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      margin: 0.2rem;
+    }
+
+    .btn-primary-link {
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2);
+    }
+    .btn-primary-link:hover {
+      background: var(--primary-hover);
+    }
+
+    .site-footer {
+      margin-top: auto;
+      background: #ffffff;
+      border-top: 1px solid var(--border-light);
+      padding: 2rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .site-footer p { margin: 0.25rem 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="site-nav">
+    <div class="container nav-inner">
+      <a href="{{ url_for('home') }}" class="brand-link">
+        <div class="brand-badge">L</div>
+        <div>
+          <span class="brand-name">LoanIQ</span>
+          <span class="brand-tag">Loan Eligibility Portal</span>
+        </div>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="{{ url_for('home') }}" class="nav-item-link">Home</a></li>
+        <li><a href="{{ url_for('about') }}" class="nav-item-link active">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="page-intro">
+    <div class="container">
+      <h1 class="page-title">About the Project</h1>
+      <p class="page-desc">
+        Underlying methodology, dataset schema, model comparison benchmarks, and feature analysis.
+      </p>
+    </div>
+  </header>
+
+  <main class="container" style="max-width: 860px; margin-bottom: 4rem;">
+
+    <!-- 1. System Overview -->
+    <section class="about-section">
+      <h3>1. Project Overview & Methodology</h3>
+      <p>
+        The Loan Approval Prediction System demonstrates an end-to-end Machine Learning pipeline designed to assess loan applications as either <strong>Approved</strong> or <strong>Rejected</strong>.
+      </p>
+      <p>
+        The pipeline adheres to strict data science best practices: separating the 20% test partition before fitting preprocessors to prevent data leakage, handling data boundary anomalies without dropping records, and comparing four classification algorithms on identical hold-out test samples.
+      </p>
+    </section>
+
+    <!-- 2. Dataset Schema -->
+    <section class="about-section">
+      <h3>2. Feature Attributes</h3>
+      <p>The system evaluates 11 input features derived from the 4,269-record dataset:</p>
+
+      <div style="overflow-x: auto;">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Feature Attribute</th>
+              <th>Data Type</th>
+              <th>Preprocessing</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>no_of_dependents</code></td>
+              <td>Numerical</td>
+              <td>StandardScaler</td>
+              <td>Number of family dependents (0 to 5)</td>
+            </tr>
+            <tr>
+              <td><code>education</code></td>
+              <td>Categorical</td>
+              <td>OneHotEncoder</td>
+              <td>Graduate vs. Not Graduate</td>
+            </tr>
+            <tr>
+              <td><code>self_employed</code></td>
+              <td>Categorical</td>
+              <td>OneHotEncoder</td>
+              <td>Salaried Employee vs. Self-Employed</td>
+            </tr>
+            <tr>
+              <td><code>income_annum</code></td>
+              <td>Numerical (₹)</td>
+              <td>StandardScaler</td>
+              <td>Gross annual income</td>
+            </tr>
+            <tr>
+              <td><code>loan_amount</code></td>
+              <td>Numerical (₹)</td>
+              <td>StandardScaler</td>
+              <td>Requested loan amount</td>
+            </tr>
+            <tr>
+              <td><code>loan_term</code></td>
+              <td>Numerical</td>
+              <td>StandardScaler</td>
+              <td>Repayment duration in years (2 to 20)</td>
+            </tr>
+            <tr>
+              <td><code>cibil_score</code></td>
+              <td>Numerical</td>
+              <td>StandardScaler</td>
+              <td>Credit bureau score (300 to 900)</td>
+            </tr>
+            <tr>
+              <td><code>residential_assets_value</code></td>
+              <td>Numerical (₹)</td>
+              <td>Clipped &ge; 0 + Scaler</td>
+              <td>Market value of residential property</td>
+            </tr>
+            <tr>
+              <td><code>commercial_assets_value</code></td>
+              <td>Numerical (₹)</td>
+              <td>StandardScaler</td>
+              <td>Market value of commercial property</td>
+            </tr>
+            <tr>
+              <td><code>luxury_assets_value</code></td>
+              <td>Numerical (₹)</td>
+              <td>StandardScaler</td>
+              <td>Value of luxury vehicles, jewelry, etc.</td>
+            </tr>
+            <tr>
+              <td><code>bank_asset_value</code></td>
+              <td>Numerical (₹)</td>
+              <td>StandardScaler</td>
+              <td>Bank deposits and liquid savings</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. Model Benchmark Matrix -->
+    <section class="about-section">
+      <h3>3. Model Benchmark & Test Results</h3>
+      <p>
+        Four classification algorithms were trained strictly on the 80% training partition (3,415 samples) and tested on the 20% holdout test partition (854 samples).
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Accuracy</th>
+              <th>Precision</th>
+              <th>Recall</th>
+              <th>F1-Score</th>
+              <th>ROC-AUC</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="highlight-row">
+              <td><strong>XGBoost Classifier</strong></td>
+              <td><strong>98.48%</strong></td>
+              <td>0.9868</td>
+              <td>0.9887</td>
+              <td><strong>0.9878</strong></td>
+              <td><strong>0.9981</strong></td>
+              <td><span style="color:var(--success); font-weight:700;">Selected Model</span></td>
+            </tr>
+            <tr>
+              <td>Decision Tree Classifier</td>
+              <td>98.36%</td>
+              <td>0.9832</td>
+              <td>0.9906</td>
+              <td>0.9869</td>
+              <td>0.9814</td>
+              <td>Evaluated</td>
+            </tr>
+            <tr>
+              <td>Random Forest Classifier</td>
+              <td>98.01%</td>
+              <td>0.9813</td>
+              <td>0.9868</td>
+              <td>0.9840</td>
+              <td>0.9988</td>
+              <td>Evaluated</td>
+            </tr>
+            <tr>
+              <td>Logistic Regression</td>
+              <td>91.45%</td>
+              <td>0.9210</td>
+              <td>0.9435</td>
+              <td>0.9321</td>
+              <td>0.9726</td>
+              <td>Baseline</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4 style="font-size:1rem; font-weight:700; color:var(--text-main); margin: 1.5rem 0 0.5rem;">
+        Confusion Matrix for Selected Model (XGBoost on 854 Test Samples)
+      </h4>
+      <div class="cm-grid">
+        <div class="cm-box tn">
+          <div class="cm-number">316</div>
+          <div class="cm-tag">True Negatives (TN)</div>
+          <span style="font-size:0.775rem; color:var(--success);">Correctly Denied</span>
+        </div>
+        <div class="cm-box fp">
+          <div class="cm-number">7</div>
+          <div class="cm-tag">False Positives (FP)</div>
+          <span style="font-size:0.775rem; color:var(--danger);">False Approvals</span>
+        </div>
+        <div class="cm-box fn">
+          <div class="cm-number">6</div>
+          <div class="cm-tag">False Negatives (FN)</div>
+          <span style="font-size:0.775rem; color:#d97706;">False Denials</span>
+        </div>
+        <div class="cm-box tp">
+          <div class="cm-number">525</div>
+          <div class="cm-tag">True Positives (TP)</div>
+          <span style="font-size:0.775rem; color:var(--primary);">Correctly Approved</span>
+        </div>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); text-align:center;">
+        Total misclassifications: only 13 out of 854 test samples (98.48% accuracy).
+      </p>
+    </section>
+
+    <!-- 4. Feature Importance -->
+    <section class="about-section">
+      <h3>4. Feature Importance in Trained Model</h3>
+      <p>
+        Relative importance of features determined by the trained XGBoost model:
+      </p>
+
+      <div style="margin: 1.25rem 0;">
+        <div class="fi-row">
+          <span class="fi-label">CIBIL Credit Score</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 66.5%;"></div></div>
+          <span class="fi-val">66.50%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Loan Term</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 22.0%;"></div></div>
+          <span class="fi-val">22.01%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Annual Income</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 3.33%;"></div></div>
+          <span class="fi-val">3.33%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Loan Amount</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 2.64%;"></div></div>
+          <span class="fi-val">2.64%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Commercial Asset Value</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 1.10%;"></div></div>
+          <span class="fi-val">1.10%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Residential Asset Value</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 1.09%;"></div></div>
+          <span class="fi-val">1.09%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Luxury Asset Value</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 1.07%;"></div></div>
+          <span class="fi-val">1.07%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Number of Dependents</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 0.85%;"></div></div>
+          <span class="fi-val">0.85%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Education Status</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 0.60%;"></div></div>
+          <span class="fi-val">0.60%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Bank Balance & Savings</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 0.59%;"></div></div>
+          <span class="fi-val">0.59%</span>
+        </div>
+
+        <div class="fi-row">
+          <span class="fi-label">Self Employed</span>
+          <div class="fi-track"><div class="fi-bar" style="width: 0.21%;"></div></div>
+          <span class="fi-val">0.21%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Technologies -->
+    <section class="about-section">
+      <h3>5. Tools & Libraries</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+        <span class="tech-tag">Python</span>
+        <span class="tech-tag">Pandas</span>
+        <span class="tech-tag">NumPy</span>
+        <span class="tech-tag">Scikit-learn</span>
+        <span class="tech-tag">XGBoost</span>
+        <span class="tech-tag">Flask</span>
+        <span class="tech-tag">HTML5 / CSS3 / JavaScript</span>
+        <span class="tech-tag">Joblib</span>
+      </div>
+    </section>
+
+    <!-- Return to Form Button -->
+    <div style="text-align: center; margin-top: 2rem;">
+      <a href="{{ url_for('home') }}" class="btn-primary-link">
+        ← Back to Loan Eligibility Form
+      </a>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p style="font-weight:600; color:var(--text-main);">Loan Approval Prediction System</p>
+      <p>This project is for educational and demonstration purposes only.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
