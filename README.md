@@ -209,9 +209,14 @@ pip install -r requirements.txt
 
 ## 18. How to Run
 
-### Run the Web Application
+### Run the Web Application (Development)
 ```bash
 python app.py
+```
+
+### Run with Production WSGI Server (Waitress)
+```bash
+python wsgi.py
 ```
 
 ### Access in Your Browser
@@ -220,7 +225,36 @@ Open your browser and navigate to:
 http://127.0.0.1:5000/
 ```
 
-### (Optional) Retrain Models or Re-run Notebooks
+---
+
+## 19. Production Build & Deployment
+
+### Option A: One-Click Launchers
+* **Windows:** Double-click [`run.bat`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/run.bat)
+* **Linux / macOS:** Run `chmod +x run.sh && ./run.sh`
+
+### Option B: Docker Containerized Build
+Build and run the multi-worker production container with a single command:
+```bash
+docker compose up --build
+```
+Or manually:
+```bash
+docker build -t loan-approval-prediction:v1.0 .
+docker run -p 5000:5000 loan-approval-prediction:v1.0
+```
+
+### Option C: Standalone Release Distribution Package
+To generate a clean production distribution package (`.zip`) inside `dist/`:
+```bash
+python scripts/build_release.py
+```
+* **Output Archive:** [`dist/Loan-Approval-Prediction-v1.0.0.zip`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/dist/Loan-Approval-Prediction-v1.0.0.zip)
+* **Output Directory:** [`dist/Loan-Approval-Prediction-v1.0.0/`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/dist/Loan-Approval-Prediction-v1.0.0/)
+
+---
+
+## 20. (Optional) Retrain Models or Re-run Notebooks
 ```bash
 # Run preprocessing
 python src/data_preprocessing.py
