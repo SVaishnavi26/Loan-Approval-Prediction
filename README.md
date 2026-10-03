@@ -250,7 +250,20 @@ To generate a clean production distribution package (`.zip`) inside `dist/`:
 python scripts/build_release.py
 ```
 * **Output Archive:** [`dist/Loan-Approval-Prediction-v1.0.0.zip`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/dist/Loan-Approval-Prediction-v1.0.0.zip)
-* **Output Directory:** [`dist/Loan-Approval-Prediction-v1.0.0/`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/dist/Loan-Approval-Prediction-v1.0.0/)
+* **Output Directory:** [`build/`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/build/)
+
+### Option D: Deploy to Render (Cloud)
+This repository includes a [`render.yaml`](file:///c:/Users/vaish/OneDrive/Desktop/Loan-Approval-Prediction/render.yaml) blueprint file for instant deployment.
+
+1. Push this project to a GitHub repository.
+2. In [Render Dashboard](https://dashboard.render.com), click **New +** $\rightarrow$ **Web Service**.
+3. Select your repository and configure:
+   * **Runtime:** `Python 3`
+   * **Build Command:** `pip install -r requirements.txt`
+   * **Start Command:** `gunicorn wsgi:app`
+4. In **Environment Variables**, add:
+   * `PYTHON_VERSION`: `3.11.9`
+5. Click **Create Web Service**. Render will automatically build the service and host it on an active public `onrender.com` URL.
 
 ---
 

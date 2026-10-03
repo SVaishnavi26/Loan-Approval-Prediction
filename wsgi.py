@@ -20,8 +20,8 @@ if __name__ == "__main__":
     try:
         # Use Waitress if available (recommended on Windows & cross-platform)
         from waitress import serve
-        print(f"[INFO] Starting production server with Waitress on http://127.0.0.1:{port} ...")
-        serve(app, host="127.0.0.1", port=port)
+        print(f"[INFO] Starting production server with Waitress on http://0.0.0.0:{port} ...")
+        serve(app, host="0.0.0.0", port=port)
     except ImportError:
-        print(f"[INFO] Waitress not installed. Running standard server on http://127.0.0.1:{port} ...")
-        app.run(host="127.0.0.1", port=port, debug=False)
+        print(f"[INFO] Waitress not installed. Running standard server on http://0.0.0.0:{port} ...")
+        app.run(host="0.0.0.0", port=port, debug=False)

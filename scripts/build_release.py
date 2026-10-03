@@ -25,6 +25,7 @@ INCLUDE_FILES = [
     ".dockerignore",
     "run.bat",
     "run.sh",
+    "render.yaml",
     "README.md",
     ".gitignore",
 ]

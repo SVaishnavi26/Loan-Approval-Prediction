@@ -135,6 +135,6 @@ def server_error(error):
 
 
 if __name__ == "__main__":
-    # Host on 127.0.0.1 with port 5000 for local development
+    # Bind to 0.0.0.0 and dynamic PORT for cloud hosting (Render, Railway, Docker, etc.)
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="127.0.0.1", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)
