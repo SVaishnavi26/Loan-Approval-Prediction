@@ -10,7 +10,8 @@ Description:
 import os
 import sys
 from datetime import datetime
-from flask import Flask, render_template, request, session, redirect, url_for
+# pyrefly: ignore [missing-import]
+from flask import Flask, render_template, request, session
 
 # Ensure project root is in sys.path
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -57,32 +58,19 @@ def predict():
     try:
         # Validate and predict using our saved pipeline
         result = predict_loan(form_data)
+        applicant_info = result["applicant"]
 
         # Record prediction into session history
         history = session.get("prediction_history", [])
         history.insert(0, {
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "loan_amount": float(form_data.get("loan_amount", 0)),
-            "cibil_score": int(form_data.get("cibil_score", 0)),
+            "loan_amount": applicant_info["loan_amount"],
+            "cibil_score": applicant_info["cibil_score"],
             "status": result["status"],
             "confidence": result["confidence"],
         })
         # Keep only the last 10 entries in session
         session["prediction_history"] = history[:10]
-
-        applicant_info = {
-            "no_of_dependents": int(form_data["no_of_dependents"]),
-            "education": form_data["education"],
-            "self_employed": form_data["self_employed"],
-            "income_annum": float(form_data["income_annum"]),
-            "loan_amount": float(form_data["loan_amount"]),
-            "loan_term": int(form_data["loan_term"]),
-            "cibil_score": int(form_data["cibil_score"]),
-            "residential_assets_value": max(0.0, float(form_data["residential_assets_value"])),
-            "commercial_assets_value": float(form_data["commercial_assets_value"]),
-            "luxury_assets_value": float(form_data["luxury_assets_value"]),
-            "bank_asset_value": float(form_data["bank_asset_value"]),
-        }
 
         return render_template("result.html", result=result, applicant=applicant_info)
 

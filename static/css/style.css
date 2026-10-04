@@ -1009,3 +1009,94 @@ select.field-input {
 .site-footer p {
   margin: 0.3rem 0;
 }
+
+/* ==========================================================================
+   Form Validation & Interactive Feedback
+   ========================================================================== */
+.field-input.is-invalid {
+  border-color: #dc2626 !important;
+  background-color: #fffafb !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+}
+
+.field-input.is-valid {
+  border-color: #059669;
+}
+
+.field-error-msg {
+  color: #dc2626;
+  font-size: 0.775rem;
+  font-weight: 600;
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+  line-height: 1.35;
+}
+
+.field-error-msg.visible {
+  display: flex;
+}
+
+.quick-chips-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.45rem;
+}
+
+.chip-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xs);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-body);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.chip-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary-border);
+}
+
+.chip-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.validation-summary-alert {
+  display: none;
+  background: var(--danger-bg);
+  border: 1.5px solid var(--danger-border);
+  color: var(--danger-text);
+  padding: 0.9rem 1.25rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  align-items: center;
+  gap: 0.65rem;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

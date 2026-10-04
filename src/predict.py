@@ -52,79 +52,121 @@ def load_artifacts():
     return _PREPROCESSOR, _MODEL
 
 
+def _clean_numeric(value, field_label: str, is_integer: bool = False, min_val: float = None, max_val: float = None, default_val: float = None):
+    """
+    Cleans string representation of numbers (removes commas, currency signs, whitespace)
+    and validates boundary ranges. If value is empty and default_val is provided, returns default_val.
+    """
+    if value is None or str(value).strip() == "":
+        if default_val is not None:
+            return default_val
+        raise ValueError(f"{field_label} is required.")
+
+    # Remove commas, currency symbols, spaces
+    val_str = str(value).strip().replace(",", "").replace("₹", "").replace("$", "").replace(" ", "")
+    try:
+        num = int(round(float(val_str))) if is_integer else float(val_str)
+    except (ValueError, TypeError):
+        raise ValueError(f"Invalid input for '{field_label}'. Please enter a valid number.")
+
+    if min_val is not None and num < min_val:
+        raise ValueError(f"{field_label} must be at least {min_val:g}.")
+    if max_val is not None and num > max_val:
+        raise ValueError(f"{field_label} cannot exceed {max_val:g}.")
+
+    return num
+
+
 def format_application_input(application_data: dict) -> pd.DataFrame:
     """
     Validates and formats incoming applicant dictionary into a single-row DataFrame
     matching the exact feature structure expected by the preprocessor.
 
     Expected input keys (or form fields):
-        - no_of_dependents (int)
+        - no_of_dependents (int, 0 to 10, default: 0)
         - education (str: 'Graduate' or 'Not Graduate')
         - self_employed (str: 'Yes' or 'No')
-        - income_annum (float/int)
-        - loan_amount (float/int)
-        - loan_term (int/float)
-        - cibil_score (int/float)
-        - residential_assets_value (float/int)
-        - commercial_assets_value (float/int)
-        - luxury_assets_value (float/int)
-        - bank_asset_value (float/int)
+        - income_annum (float, > 0)
+        - loan_amount (float, > 0)
+        - loan_term (int, 1 to 30)
+        - cibil_score (int, 300 to 900)
+        - residential_assets_value (float, >= 0, default: 0.0)
+        - commercial_assets_value (float, >= 0, default: 0.0)
+        - luxury_assets_value (float, >= 0, default: 0.0)
+        - bank_asset_value (float, >= 0, default: 0.0)
     """
+    # Core mandatory fields
     required_fields = [
-        "no_of_dependents",
         "education",
         "self_employed",
         "income_annum",
         "loan_amount",
         "loan_term",
         "cibil_score",
-        "residential_assets_value",
-        "commercial_assets_value",
-        "luxury_assets_value",
-        "bank_asset_value",
     ]
 
-    missing = [f for f in required_fields if f not in application_data]
+    missing = [f for f in required_fields if f not in application_data or str(application_data[f]).strip() == ""]
     if missing:
-        raise ValueError(f"Missing required application fields: {', '.join(missing)}")
+        field_labels = {
+            "education": "Education",
+            "self_employed": "Employment type",
+            "income_annum": "Annual income",
+            "loan_amount": "Requested loan amount",
+            "loan_term": "Repayment tenure",
+            "cibil_score": "CIBIL score",
+        }
+        missing_names = ", ".join(field_labels.get(f, f) for f in missing)
+        raise ValueError(f"Please fill in all required fields: {missing_names}.")
 
-    # Clean string values
+    # Clean & normalize categorical values
     education = str(application_data["education"]).strip()
     self_employed = str(application_data["self_employed"]).strip()
 
-    # Validate categories
+    if "not graduate" in education.lower():
+        education = "Not Graduate"
+    elif "graduate" in education.lower():
+        education = "Graduate"
+
+    if self_employed.lower() in ["no", "salaried", "salaried employee"]:
+        self_employed = "No"
+    elif self_employed.lower() in ["yes", "self-employed", "business"]:
+        self_employed = "Yes"
+
     if education not in ["Graduate", "Not Graduate"]:
         raise ValueError(f"Invalid education value '{education}'. Must be 'Graduate' or 'Not Graduate'.")
     if self_employed not in ["Yes", "No"]:
-        raise ValueError(f"Invalid self_employed value '{self_employed}'. Must be 'Yes' or 'No'.")
+        raise ValueError(f"Invalid employment type '{self_employed}'. Must be 'Salaried' or 'Self-Employed'.")
 
-    # Numeric conversion & domain boundary checks
-    try:
-        no_of_dependents = int(application_data["no_of_dependents"])
-        income_annum = float(application_data["income_annum"])
-        loan_amount = float(application_data["loan_amount"])
-        loan_term = int(application_data["loan_term"])
-        cibil_score = int(application_data["cibil_score"])
-        residential_assets_value = float(application_data["residential_assets_value"])
-        commercial_assets_value = float(application_data["commercial_assets_value"])
-        luxury_assets_value = float(application_data["luxury_assets_value"])
-        bank_asset_value = float(application_data["bank_asset_value"])
-    except (ValueError, TypeError) as e:
-        raise ValueError(f"Invalid numerical input: {e}")
+    # Validate numerical fields with flexible, unconstrained boundaries
+    no_of_dependents = _clean_numeric(
+        application_data.get("no_of_dependents"), "Number of dependents", is_integer=True, min_val=0, max_val=10, default_val=0
+    )
+    cibil_score = _clean_numeric(
+        application_data.get("cibil_score"), "CIBIL credit score", is_integer=True, min_val=300, max_val=900
+    )
+    income_annum = _clean_numeric(
+        application_data.get("income_annum"), "Annual income", is_integer=False, min_val=1
+    )
+    loan_amount = _clean_numeric(
+        application_data.get("loan_amount"), "Requested loan amount", is_integer=False, min_val=1
+    )
+    loan_term = _clean_numeric(
+        application_data.get("loan_term"), "Repayment tenure (years)", is_integer=True, min_val=1, max_val=30
+    )
 
-    # Specific business validations
-    if no_of_dependents < 0:
-        raise ValueError("Number of dependents cannot be negative.")
-    if income_annum < 0:
-        raise ValueError("Annual income cannot be negative.")
-    if loan_amount <= 0:
-        raise ValueError("Loan amount must be greater than zero.")
-    if loan_term <= 0:
-        raise ValueError("Loan term must be a positive integer.")
-    if not (300 <= cibil_score <= 900):
-        raise ValueError("CIBIL score must be between 300 and 900.")
-    if commercial_assets_value < 0 or luxury_assets_value < 0 or bank_asset_value < 0:
-        raise ValueError("Asset values cannot be negative.")
+    # Assets default to 0.0 if not owned or left empty by the applicant
+    residential_assets_value = _clean_numeric(
+        application_data.get("residential_assets_value"), "Residential property value", is_integer=False, min_val=0, default_val=0.0
+    )
+    commercial_assets_value = _clean_numeric(
+        application_data.get("commercial_assets_value"), "Commercial property value", is_integer=False, min_val=0, default_val=0.0
+    )
+    luxury_assets_value = _clean_numeric(
+        application_data.get("luxury_assets_value"), "Luxury assets value", is_integer=False, min_val=0, default_val=0.0
+    )
+    bank_asset_value = _clean_numeric(
+        application_data.get("bank_asset_value"), "Bank balance & savings", is_integer=False, min_val=0, default_val=0.0
+    )
 
     # Consistency with training data preprocessing:
     # Negative residential asset values are clipped to 0
@@ -159,13 +201,14 @@ def predict_loan(application_data: dict) -> dict:
 
     Returns:
         dict: Prediction results including:
-            - prediction (str): 'Approved' or 'Rejected'
+            - status (str): 'Approved' or 'Rejected'
             - prediction_code (int): 1 (Approved) or 0 (Rejected)
             - confidence (float): Probability percentage (0 to 100)
             - approved_prob (float): Probability of approval (0.0 to 1.0)
             - rejected_prob (float): Probability of rejection (0.0 to 1.0)
             - total_assets (float): Sum of all assets
             - debt_to_income_ratio (float): loan_amount / income_annum
+            - applicant (dict): Cleaned and typed applicant dictionary
     """
     # 1. Format and validate input data
     df_input = format_application_input(application_data)
@@ -191,17 +234,31 @@ def predict_loan(application_data: dict) -> dict:
     status = "Approved" if pred_code == 1 else "Rejected"
     confidence = (approved_prob if pred_code == 1 else rejected_prob) * 100
 
-    # Calculate helpful summary metrics
-    income = float(application_data["income_annum"])
-    loan_amt = float(application_data["loan_amount"])
+    # Extract cleaned values directly from df_input
+    income = float(df_input["income_annum"].iloc[0])
+    loan_amt = float(df_input["loan_amount"].iloc[0])
     dti_ratio = round(loan_amt / income, 2) if income > 0 else 0.0
 
     total_assets = (
-        max(0.0, float(application_data.get("residential_assets_value", 0)))
-        + float(application_data.get("commercial_assets_value", 0))
-        + float(application_data.get("luxury_assets_value", 0))
-        + float(application_data.get("bank_asset_value", 0))
+        float(df_input["residential_assets_value"].iloc[0])
+        + float(df_input["commercial_assets_value"].iloc[0])
+        + float(df_input["luxury_assets_value"].iloc[0])
+        + float(df_input["bank_asset_value"].iloc[0])
     )
+
+    applicant_clean = {
+        "no_of_dependents": int(df_input["no_of_dependents"].iloc[0]),
+        "education": str(df_input["education"].iloc[0]),
+        "self_employed": str(df_input["self_employed"].iloc[0]),
+        "income_annum": income,
+        "loan_amount": loan_amt,
+        "loan_term": int(df_input["loan_term"].iloc[0]),
+        "cibil_score": int(df_input["cibil_score"].iloc[0]),
+        "residential_assets_value": float(df_input["residential_assets_value"].iloc[0]),
+        "commercial_assets_value": float(df_input["commercial_assets_value"].iloc[0]),
+        "luxury_assets_value": float(df_input["luxury_assets_value"].iloc[0]),
+        "bank_asset_value": float(df_input["bank_asset_value"].iloc[0]),
+    }
 
     return {
         "status": status,
@@ -209,12 +266,13 @@ def predict_loan(application_data: dict) -> dict:
         "confidence": round(confidence, 2),
         "approved_prob": round(approved_prob, 4),
         "rejected_prob": round(rejected_prob, 4),
-        "cibil_score": int(application_data["cibil_score"]),
+        "cibil_score": applicant_clean["cibil_score"],
         "loan_amount": loan_amt,
-        "loan_term": int(application_data["loan_term"]),
+        "loan_term": applicant_clean["loan_term"],
         "income_annum": income,
         "debt_to_income_ratio": dti_ratio,
-        "total_assets": total_assets,
+        "total_assets": round(total_assets, 2),
+        "applicant": applicant_clean,
     }
 
 

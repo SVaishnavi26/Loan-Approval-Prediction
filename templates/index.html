@@ -437,6 +437,84 @@
       border: 1px solid var(--danger-border);
     }
 
+    /* Form Validation Feedback */
+    .field-input.is-invalid {
+      border-color: #dc2626 !important;
+      background-color: #fffafb !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+    }
+    .field-input.is-valid {
+      border-color: #059669;
+    }
+    .field-error-msg {
+      color: #dc2626;
+      font-size: 0.775rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.3rem;
+      line-height: 1.35;
+    }
+    .field-error-msg.visible {
+      display: flex;
+    }
+    .quick-chips-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-top: 0.45rem;
+    }
+    .chip-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-xs);
+      padding: 0.25rem 0.75rem;
+      font-size: 0.775rem;
+      font-weight: 600;
+      color: var(--text-body);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .chip-btn:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+    .chip-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .validation-summary-alert {
+      display: none;
+      background: var(--danger-bg);
+      border: 1.5px solid var(--danger-border);
+      color: var(--danger-text);
+      padding: 0.9rem 1.25rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      align-items: center;
+      gap: 0.65rem;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
+    }
+    .btn-spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Submit Button */
     .btn-primary-action {
       width: 100%;
@@ -555,22 +633,31 @@
       <div class="presets-wrap">
         <span class="presets-tag">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-          Try sample data:
+          Quick Presets:
         </span>
         <div class="presets-group">
           <button type="button" class="btn-sample" id="btnSampleApproved">
-            🟢 Strong Credit Profile
+            🟢 Strong Profile
+          </button>
+          <button type="button" class="btn-sample" id="btnSampleModerate">
+            🔵 Moderate Profile
           </button>
           <button type="button" class="btn-sample" id="btnSampleRejected">
-            🟡 Low Credit Profile
+            🟡 High Risk Profile
           </button>
           <button type="button" class="btn-sample btn-clear" id="btnResetForm">
-            ↺ Clear
+            ↺ Reset
           </button>
         </div>
       </div>
 
-      <form id="loanForm" action="{{ url_for('predict') }}" method="POST">
+      <!-- Inline Validation Summary Banner -->
+      <div class="validation-summary-alert" id="validationAlert" role="alert">
+        <span>⚠️</span>
+        <span id="validationAlertText">Please correct the highlighted fields below before submitting.</span>
+      </div>
+
+      <form id="loanForm" action="{{ url_for('predict') }}" method="POST" novalidate>
         
         <!-- Section 1: Personal & Employment Details -->
         <div class="form-section-block">
@@ -585,29 +672,38 @@
             
             <div class="field-col">
               <label for="no_of_dependents" class="field-label">
-                Number of Dependents <span class="unit">(Persons)</span>
+                Number of Dependents <span class="unit">(0 to 5+)</span>
               </label>
-              <input type="number" class="field-input" id="no_of_dependents" name="no_of_dependents" 
-                     min="0" max="10" value="{{ form_data.get('no_of_dependents', 2) }}" required>
-              <span class="field-hint">Family members dependent on you</span>
+              <select class="field-input" id="no_of_dependents" name="no_of_dependents" required>
+                <option value="0" {% if form_data.get('no_of_dependents') == '0' %}selected{% endif %}>0 (No Dependents)</option>
+                <option value="1" {% if form_data.get('no_of_dependents') == '1' %}selected{% endif %}>1 Dependent</option>
+                <option value="2" {% if form_data.get('no_of_dependents') == '2' or not form_data.get('no_of_dependents') %}selected{% endif %}>2 Dependents</option>
+                <option value="3" {% if form_data.get('no_of_dependents') == '3' %}selected{% endif %}>3 Dependents</option>
+                <option value="4" {% if form_data.get('no_of_dependents') == '4' %}selected{% endif %}>4 Dependents</option>
+                <option value="5" {% if form_data.get('no_of_dependents') == '5' %}selected{% endif %}>5 or more Dependents</option>
+              </select>
+              <span class="field-hint">Family members dependent on your income</span>
+              <div class="field-error-msg" id="err_no_of_dependents"></div>
             </div>
 
             <div class="field-col">
               <label for="education" class="field-label">Highest Education</label>
               <select class="field-input" id="education" name="education" required>
-                <option value="Graduate" {% if form_data.get('education') == 'Graduate' or not form_data %}selected{% endif %}>Graduate</option>
-                <option value="Not Graduate" {% if form_data.get('education') == 'Not Graduate' %}selected{% endif %}>Not Graduate</option>
+                <option value="Graduate" {% if form_data.get('education') == 'Graduate' or not form_data %}selected{% endif %}>Graduate Degree</option>
+                <option value="Not Graduate" {% if form_data.get('education') == 'Not Graduate' %}selected{% endif %}>Non-Graduate / High School</option>
               </select>
-              <span class="field-hint">Your completed education level</span>
+              <span class="field-hint">Formal educational attainment level</span>
+              <div class="field-error-msg" id="err_education"></div>
             </div>
 
             <div class="field-col full-col">
               <label for="self_employed" class="field-label">Employment Type</label>
               <select class="field-input" id="self_employed" name="self_employed" required>
-                <option value="No" {% if form_data.get('self_employed') == 'No' or not form_data %}selected{% endif %}>Salaried Employee (Regular Salary)</option>
-                <option value="Yes" {% if form_data.get('self_employed') == 'Yes' %}selected{% endif %}>Self-Employed / Business Owner</option>
+                <option value="No" {% if form_data.get('self_employed') == 'No' or not form_data %}selected{% endif %}>Salaried Employee (Regular Monthly Salary)</option>
+                <option value="Yes" {% if form_data.get('self_employed') == 'Yes' %}selected{% endif %}>Self-Employed / Business Owner / Consultant</option>
               </select>
-              <span class="field-hint">Primary source of income</span>
+              <span class="field-hint">Primary source of income and professional status</span>
+              <div class="field-error-msg" id="err_self_employed"></div>
             </div>
 
           </div>
@@ -626,29 +722,35 @@
             
             <div class="field-col full-col">
               <label for="cibil_score" class="field-label">
-                Credit Score (CIBIL) <span class="unit">(Scale: 300 to 900)</span>
+                Credit Score (CIBIL) <span class="unit">(Range: 300 to 900)</span>
               </label>
               <input type="number" class="field-input" id="cibil_score" name="cibil_score" 
-                     min="300" max="900" value="{{ form_data.get('cibil_score', 778) }}" required>
+                     min="300" max="900" step="1" 
+                     placeholder="Enter your score (e.g. 750)"
+                     value="{{ form_data.get('cibil_score', '') }}" required>
               
               <!-- Interactive CIBIL Tier Badge -->
               <div class="cibil-meter-box" id="cibilMeterBox">
-                <span style="font-size:0.8rem; color:var(--text-muted);">Current Credit Standing:</span>
-                <span class="cibil-tier-indicator cibil-tier-excellent" id="cibilBadge">★ Prime Credit (750+)</span>
+                <span style="font-size:0.825rem; font-weight:600; color:var(--text-muted);">Current Credit Standing:</span>
+                <span class="cibil-tier-indicator cibil-tier-good" id="cibilBadge">● Credit Standing</span>
               </div>
-              <span class="field-hint" id="cibilDesc">Very low default risk. Highest likelihood of fast approval.</span>
+              <span class="field-hint" id="cibilDesc">Enter your score (300 - 900). Scores above 650 are favorable for approval.</span>
+              <div class="field-error-msg" id="err_cibil_score"></div>
             </div>
 
             <div class="field-col">
               <label for="income_annum" class="field-label">
-                Annual Income <span class="unit">(₹ INR)</span>
+                Annual Gross Income <span class="unit">(₹ INR)</span>
               </label>
               <input type="number" class="field-input" id="income_annum" name="income_annum" 
-                     min="0" step="50000" value="{{ form_data.get('income_annum', 9600000) }}" required>
+                     min="1" step="any" 
+                     placeholder="Enter your annual income (e.g. 800000)"
+                     value="{{ form_data.get('income_annum', '') }}" required>
               <div class="field-hint">
                 <span>In Lakhs / Crores:</span>
-                <span class="currency-human" id="income_annum_preview">₹96 Lakh</span>
+                <span class="currency-human" id="income_annum_preview">₹0</span>
               </div>
+              <div class="field-error-msg" id="err_income_annum"></div>
             </div>
 
             <div class="field-col">
@@ -656,20 +758,34 @@
                 Requested Loan Amount <span class="unit">(₹ INR)</span>
               </label>
               <input type="number" class="field-input" id="loan_amount" name="loan_amount" 
-                     min="10000" step="50000" value="{{ form_data.get('loan_amount', 29900000) }}" required>
+                     min="1" step="any" 
+                     placeholder="Amount you wish to borrow (e.g. 2000000)"
+                     value="{{ form_data.get('loan_amount', '') }}" required>
               <div class="field-hint">
                 <span>Requested loan:</span>
-                <span class="currency-human" id="loan_amount_preview">₹2.99 Cr</span>
+                <span class="currency-human" id="loan_amount_preview">₹0</span>
               </div>
+              <div class="field-error-msg" id="err_loan_amount"></div>
             </div>
 
             <div class="field-col full-col">
               <label for="loan_term" class="field-label">
-                Repayment Tenure <span class="unit">(Years)</span>
+                Repayment Tenure <span class="unit">(1 to 30 Years)</span>
               </label>
               <input type="number" class="field-input" id="loan_term" name="loan_term" 
-                     min="1" max="30" value="{{ form_data.get('loan_term', 12) }}" required>
-              <span class="field-hint">How many years you wish to repay the loan</span>
+                     min="1" max="30" step="1" 
+                     placeholder="Tenure in years (e.g. 10 or 15)"
+                     value="{{ form_data.get('loan_term', '') }}" required>
+              
+              <div class="quick-chips-wrap">
+                <span style="font-size:0.775rem; color:var(--text-muted); font-weight:600;">Popular Tenures:</span>
+                <button type="button" class="chip-btn" data-tenure="5">5 Yrs</button>
+                <button type="button" class="chip-btn" data-tenure="10">10 Yrs</button>
+                <button type="button" class="chip-btn" data-tenure="15">15 Yrs</button>
+                <button type="button" class="chip-btn" data-tenure="20">20 Yrs</button>
+              </div>
+              <span class="field-hint" style="margin-top:0.35rem;">Length of time in years you wish to repay the loan</span>
+              <div class="field-error-msg" id="err_loan_term"></div>
             </div>
 
           </div>
@@ -680,71 +796,83 @@
           <div class="form-section-header">
             <div class="section-icon-badge">🏛️</div>
             <div>
-              <div class="section-heading-text">Assets & Collateral</div>
-              <div class="section-subtext">Estimated valuation of declared assets and bank deposits</div>
+              <div class="section-heading-text">Assets & Property <span style="font-size:0.85rem; font-weight:500; color:var(--text-muted);">(Optional - Enter what you own)</span></div>
+              <div class="section-subtext">Declare the estimated valuation of your own property or savings. Leave as 0 or empty if you don't own them.</div>
             </div>
           </div>
           <div class="form-grid">
             
             <div class="field-col">
               <label for="residential_assets_value" class="field-label">
-                Residential Property <span class="unit">(₹ INR)</span>
+                Residential Property <span class="unit">(Your home / land)</span>
               </label>
               <input type="number" class="field-input" id="residential_assets_value" name="residential_assets_value" 
-                     min="0" step="50000" value="{{ form_data.get('residential_assets_value', 2400000) }}" required>
+                     min="0" step="any" 
+                     placeholder="0 or your property value"
+                     value="{{ form_data.get('residential_assets_value', '') }}">
               <div class="field-hint">
-                <span>Current market value:</span>
-                <span class="currency-human" id="residential_assets_value_preview">₹24 Lakh</span>
+                <span>Market value:</span>
+                <span class="currency-human" id="residential_assets_value_preview">₹0</span>
               </div>
+              <div class="field-error-msg" id="err_residential_assets_value"></div>
             </div>
 
             <div class="field-col">
               <label for="commercial_assets_value" class="field-label">
-                Commercial Property <span class="unit">(₹ INR)</span>
+                Commercial Property <span class="unit">(Shops, offices, if any)</span>
               </label>
               <input type="number" class="field-input" id="commercial_assets_value" name="commercial_assets_value" 
-                     min="0" step="50000" value="{{ form_data.get('commercial_assets_value', 17600000) }}" required>
+                     min="0" step="any" 
+                     placeholder="0 if none owned"
+                     value="{{ form_data.get('commercial_assets_value', '') }}">
               <div class="field-hint">
-                <span>Offices, shops, land:</span>
-                <span class="currency-human" id="commercial_assets_value_preview">₹1.76 Cr</span>
+                <span>Offices, shops:</span>
+                <span class="currency-human" id="commercial_assets_value_preview">₹0</span>
               </div>
+              <div class="field-error-msg" id="err_commercial_assets_value"></div>
             </div>
 
             <div class="field-col">
               <label for="luxury_assets_value" class="field-label">
-                Luxury & Other Assets <span class="unit">(₹ INR)</span>
+                Luxury & Other Assets <span class="unit">(Vehicles, jewelry, etc.)</span>
               </label>
               <input type="number" class="field-input" id="luxury_assets_value" name="luxury_assets_value" 
-                     min="0" step="50000" value="{{ form_data.get('luxury_assets_value', 22700000) }}" required>
+                     min="0" step="any" 
+                     placeholder="0 if none owned"
+                     value="{{ form_data.get('luxury_assets_value', '') }}">
               <div class="field-hint">
-                <span>Vehicles, jewelry, etc.:</span>
-                <span class="currency-human" id="luxury_assets_value_preview">₹2.27 Cr</span>
+                <span>Vehicles, jewelry:</span>
+                <span class="currency-human" id="luxury_assets_value_preview">₹0</span>
               </div>
+              <div class="field-error-msg" id="err_luxury_assets_value"></div>
             </div>
 
             <div class="field-col">
               <label for="bank_asset_value" class="field-label">
-                Bank Balance & Savings <span class="unit">(₹ INR)</span>
+                Bank Balance & Savings <span class="unit">(Deposits, FDs)</span>
               </label>
               <input type="number" class="field-input" id="bank_asset_value" name="bank_asset_value" 
-                     min="0" step="50000" value="{{ form_data.get('bank_asset_value', 8000000) }}" required>
+                     min="0" step="any" 
+                     placeholder="0 or bank balance"
+                     value="{{ form_data.get('bank_asset_value', '') }}">
               <div class="field-hint">
                 <span>Liquid bank deposits:</span>
-                <span class="currency-human" id="bank_asset_value_preview">₹80 Lakh</span>
+                <span class="currency-human" id="bank_asset_value_preview">₹0</span>
               </div>
+              <div class="field-error-msg" id="err_bank_asset_value"></div>
             </div>
 
           </div>
         </div>
 
-        <button type="submit" class="btn-primary-action">
-          <span>Check My Loan Eligibility</span>
-          <span class="btn-arrow">→</span>
+        <button type="submit" class="btn-primary-action" id="btnSubmitForm">
+          <span id="btnSubmitText">Check My Loan Eligibility</span>
+          <span class="btn-arrow" id="btnSubmitArrow">→</span>
         </button>
 
         <div class="trust-note">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          <span>Your details are processed locally for instant eligibility evaluation</span>
+          <span>All inputs validated securely in real time for instant assessment</span>
         </div>
 
       </form>
